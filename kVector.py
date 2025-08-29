@@ -51,9 +51,12 @@ class kVector:
     #( --- sum --- )#
     def __add__(self, y):
         if isinstance(y, kVector):
-            ret = kVector([ self.vector[0] + y.vector[0], self.vector[1] + y.vector[1], self.vector[2] + y.vector[2] ])
+            if self.transposed != y.transposed:
+                raise(NameError("both vector shall have the same dimension"))
+            else:
+                ret = kVector( [i+j for i,j in zip(self.vector, y.vector)], transposed=self.transposed )
         elif isinstance(y, int) or isinstance(y, float):
-            ret = kVector([ self.vector[0] + y, self.vector[1] + y, self.vector[2] + y ])
+            ret = kVector( [i+y for i in self.vector], transposed = self.transposed)
         else:
             raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
         return ret
@@ -73,15 +76,19 @@ class kVector:
     #( --- difference --- )#
     def __sub__(self, y):
         if isinstance(y, kVector):
-            ret = kVector([ self.vector[0] - y.vector[0], self.vector[1] - y.vector[1], self.vector[2] - y.vector[2] ])
+            if self.transposed != y.transposed:
+                raise(NameError("both vector shall have the same dimension"))
+            else:
+                ret = kVector( [i-j for i,j in zip(self.vector, y.vector)], transposed=self.transposed)
         elif isinstance(y, int) or isinstance(y, float):
-            ret = kVector([ self.vector[0] - y, self.vector[1] - y, self.vector[2] - y ])
+            ret = kVector( [i-y for i in self.vector], transposed=self.transposed)
         else:
             raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
         return ret
 
     def __rsub__(self, y):
-        return self.__add__(-y)
+        # y - self
+        return -kVector(self.vector) + y
 
     def __isub__(self, y): # -=
         q = self.__sub__(y)
@@ -93,7 +100,7 @@ class kVector:
         if isinstance(y, kVector):
             if self.transposed:
                 # [1x3] x [3x1]
-                ret = (self.vector[0] * y.vector[0]) + (self.vector[1] * y.vector[1]) + (self.vector[2] * y.vector[2])
+                ret = sum([i*j for i,j in zip(self.vector, y.vector)])
             elif y.transposed:
                 # [3x1] x [1x3]
                 raise(NameError("a matrix class needs to be developed"))
@@ -101,7 +108,7 @@ class kVector:
                 raise(NameError("WTF??"))
 
         elif isinstance(y, int) or isinstance(y, float):
-            ret = kVector([ y*self.vector[0], y*self.vector[1], y*self.vector[2] ])
+            ret = kVector( [y*i for i in self.vector], transposed=self.transposed)
 
         else:
             raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
@@ -128,7 +135,26 @@ class kVector:
 
     #( --- miscelaneous --- )#
     def __abs__(self):
-        return math.sqrt( (self.vector[0]**2) + (self.vector[1]**2) + (self.vector[2]**2) )
+        return math.sqrt( sum( [i**2 for i in self.vector] ))
+
+    def __eq__(self, y):
+        tol = 1e-10
+        ret = True
+        if isinstance(y, kVector):
+            if self.transposed != y.transposed:
+                ret = False
+
+            if 0 == 1:
+                print(self.vector)
+                print(y.vector)
+                print([ abs(i-j) < max( [abs(i), abs(j)] )*tol for i,j in zip(self.vector, y.vector) ])
+
+            if not all( [ abs(i-j) <= max( [abs(i), abs(j)] )*tol for i,j in zip(self.vector, y.vector) ] ):
+                ret = False
+        else:
+            raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
+
+        return ret
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 if __name__ == "__main__":
@@ -141,24 +167,40 @@ if __name__ == "__main__":
     print(b)
     print("b = {:f}".format(b))
 
+    print("==== eq ====")
+    a = kVector([1,2,3])
+    b = kVector([2,2,3])
+    assert a == a
+    assert a != b
+    print("a == a: {:s}".format((a==a).__str__()))
+    print("a == b: {:s}".format((a==b).__str__()))
+
     print("==== sum ====")
     a = kVector((1,2,3))
     b = kVector((4,5,6))
+    assert a+b == kVector([5,7,9])
+    assert a+(-1) == kVector([0,1,2])
+    assert (-1)+a == kVector([0,1,2])
     print("a + b    = {:f}".format(a+b))
     print("a + (-1) = {:f}".format(a+(-1)))
     print("(-1) + a = {:f}".format((-1)+a))
     a += 7
+    assert a == kVector([8,9,10])
     print("a += 7: {:f}".format(a))
 
     print("==== negative signal ====")
     print("-a = {:f}".format(-a))
+    assert -a == kVector([-8,-9,-10])
 
     print("==== difference ====")
     a = kVector((1,2,3))
     b = kVector((4,5,6))
+    assert a-b == kVector([-3, -3, -3])
+    assert 3.-a == kVector([2,1,0])
     print("a - b   = {:f}".format(a-b))
     print("3.0 - a = {:f}".format(3.0-a))
     a -= 3.0
+    assert a == kVector([-2,-1,0])
     print("a -= 3.0: {:f}".format(a))
 
     print("==== multiplication ====")
@@ -170,14 +212,18 @@ if __name__ == "__main__":
         print("a * b =")
         print("    ^^^ERROR: 'a' should be transposed!")
 
+    assert a.T*b == 32
+    assert 7.*a == kVector([7,14,21])
     print("a.T     = {:f}".format(a.T))
     print("a.T * b = {:f}".format( a.T*b ))
     print("7.0 * a = {:f}".format( 7.0 * a ))
     a *= 10
+    assert a == kVector([10,20,30])
     print("a *= 10 : {:f}".format(a))
 
     print("==== norm ====")
-    a = kVector([1,2,3])
+    a = kVector([1,1])
+    assert abs(abs(a) - math.sqrt(2)) < 1e-10
     print("||a|| = {:f}".format(abs(a)))
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
