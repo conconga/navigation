@@ -16,67 +16,149 @@ import copy
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
+class kMatrixBuffer:
+    def __init__(self, content):
+        """
+        The content shall be something convertable to a list, which will
+        be stored.
+        """
+
+        self.buffer = list(content)
+        self.len    = len(self.buffer)
+
+    def __getitem__(self, index):
+        assert index < self.len
+        return self.buffer[index]
+
+    def __len__(self):
+        return self.len
+
+    def __str__(self):
+        txt  = "buffer      = {:s}\n".format(self.buffer.__str__())
+        txt += "len(buffer) = {:d}".format(self.len)
+        return txt
+
+#>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
+class kMatrixInfo:
+    def __init__(self, size, isTransposed):
+        """
+        The size of the original matrix, not transposed, is preserved and
+        shall not be adjusted when the matrix is converted to a transposed one.
+        """
+        self.size_orig    = size
+        self.isTransposed = isTransposed
+
+    def __str__(self):
+        txt  = "size_orig   = {:s}\n".format(self.size_orig.__str__())
+        txt += "isTransp    = {:d}".format(self.isTransposed)
+        return txt
+
+    @property
+    def size_rotated(self):
+        return (self.size_orig[1], self.size_orig[0])
+
+    @property
+    def length(self):
+        return self.size_orig[0] * self.size_orig[1]
+
+#>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
+class kMatrixIdx:
+    def __init__(self, info):
+        """
+        asTransposed: [True/False] defines how to calculate the indexing.
+        """
+        self.size_orig    = info.size_orig
+        self.asTransposed = info.isTransposed
+
+    def __getitem__(self, index_rc):
+        return self._get_index(index_rc[0], index_rc[1])
+
+    def _get_index(self, row, column):
+        """
+        For example:
+        A matrix [2x3] is created with
+        Buffer = [ a,b,c,d,e,f ]
+        The matrix is then:
+        [ [a,b,c],
+          [d,e,f] ]
+        The element 'e' at position (1,1) has index 4, and the element 'c'
+        at position (0,2) has index 2.
+        c(0,2): 0x3 + 2 = 2
+        e(1,1): 1x3 + 1 = 4
+
+        Now the buffer is used by a transposed matrix [3x2].
+        [ [a,d],
+          [b,e],
+          [c,f] ]
+        The element 'c' is now (2,0), but its index at the buffer remains 2.
+        c(2,0): 2 + 0x2 = 2
+        e(0,2): 0 + 2x2 = 4
+        """
+
+        if self.asTransposed:
+            idx = row + (column * self.size_orig[1])
+        else:
+            idx = (row * self.size_orig[1]) + column
+
+        return idx
+
+#>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 class kMatrix:
     """
     The matrix is stored as a vector with the elements fill rows before columns.
     """
-    def __init__(self, val, transposed=False, size=(3,3)):
-        # by default, never trasposed:
-        self.transposed = transposed
-
-        # by default, [3x3]:
-        self.size = size
-
+    def __init__(self, val, transposed=False, size=None):
         # loading:
         if isinstance(val, kMatrix):
-            self.size       = copy.deepcopy(val.size)
-            self.vector     = copy.deepcopy(val.vector)
+            self.buffer = val.buffer # no deepcopy !!
+            if size is None:
+                size = val.info.size_orig
 
         elif isinstance(val, list) or isinstance(val, tuple):
-            self.vector    = list(copy.deepcopy(val))
+            self.buffer = kMatrixBuffer(val)
+            if size is None:
+                raise(NameError("the size must be specified here"))
 
         else:
             raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
 
-        # nb of items:
-        self.len  = size[0] * size[1]
+        self.info = kMatrixInfo(size, transposed)
+        self.idx  = kMatrixIdx(self.info)
+        assert len(self.buffer) == self.info.length
 
     def __getitem__(self, index):
         """
         index = (row, column)
         """
-        if self.transposed:
-            idx = (index[1] * self.size[1]) + index[0]
-        else:
-            idx = (index[0] * self.size[1]) + index[1]
+        a = self.idx[index]
+        b = self.buffer[a]
+        return self.buffer[self.idx[index]]
 
-        return self.vector[idx]
+    def print_summary(self):
+        print("vvv sumary vvv")
+        print(self.info)
+        print(self.buffer)
+        print("^^ sumary ^^")
 
     def _do_format(self, fmt):
-        if self.transposed:
-            txt = "[ ["
-            for r in range(self.size[1]):
-                for c in range(self.size[0]):
-                    txt += "{{:{:s}}}".format(fmt).format(self[r,c]) # <- idx calculated for a trasposed matrix
-                    if c < (self.size[0]-1):
-                        txt += ", "
-                if r < (self.size[1]-1):
-                    txt += "], ["
-                else:
-                    txt += "]"
-            txt += " ]"
+        #self.print_summary()
+
+        if self.info.isTransposed:
+            R,C = self.info.size_rotated
         else:
-            txt = "[ ["
-            for r in range(self.size[0]):
-                for c in range(self.size[1]):
-                    txt += "{{:{:s}}}".format(fmt).format(self[r,c])
-                    if c < (self.size[1]-1):
-                        txt += ", "
-                if r < (self.size[0]-1):
-                    txt += "], ["
-                else:
-                    txt += "]"
-            txt += " ]"
+            R,C = self.info.size_orig
+
+        txt = "[ ["
+        for r in range(R):
+            for c in range(C):
+                txt += "{{:{:s}}}".format(fmt).format(self[r,c])
+                if c < (C-1):
+                    txt += ", "
+            if r < (R-1):
+                txt += "], ["
+            else:
+                txt += "]"
+        txt += " ]"
 
         return txt
 
@@ -88,16 +170,14 @@ class kMatrix:
 
     @property
     def T(self):
-        return kMatrix(self.vector, size=self.size, transposed=True)
+        return kMatrix(self, size=self.info.size_orig, transposed=True)
 
     #( --- iter --- )#
     def __iter__(self):
-        if self.transposed:
-            R = self.size[1]
-            C = self.size[0]
+        if self.info.isTransposed:
+            R,C = self.info.size_rotated
         else:
-            R = self.size[0]
-            C = self.size[1]
+            R,C = self.info.size_orig
 
         for r in range(R):
             for c in range(C):
@@ -106,33 +186,31 @@ class kMatrix:
     #( --- sum --- )#
     def __add__(self, y):
         if isinstance(y, kMatrix):
-            assert self.size == y.size
-
             # the result shall have the right size, but not transposed
-            # 1) A + B:
-            if not self.transposed and not y.transposed:
-                ret = kMatrix( [i+j for i,j in zip(self, y)], size=self.size)
-            # 2) A + B.T:
-            # 3) A.T + B:
-            elif self.transposed and (not y.transposed):
-                # self is flagged with "transposed", and the indexes will be calculated accordingly;
-                # therefore, the 'tmp' matrix does not to be flagged again.
-                print("self (c.T) 3x2")
-                print(self)
-                tmp = kMatrix(self)
-                print("self.T")
-                print(tmp)
-                for i in tmp:
-                    print("{:d} ".format(i))
-                print("y")
-                print(y)
-                for i in y:
-                    print("{:d} ".format(i))
 
-                ret = kMatrix([i+j for i,j in zip( kMatrix(self, transposed=True), y )], size=y.size)
+            # 1) A + B:
+            if (not self.info.isTransposed) and (not y.info.isTransposed):
+                assert self.info.size_orig == y.info.size_orig
+                ret = kMatrix( [i+j for i,j in zip(self, y)], size=self.info.size_orig)
+
+            # 2) A + B.T:
+            elif (not self.info.isTransposed) and (y.info.isTransposed):
+                assert self.info.size_orig == y.info.size_rotated
+                ret = kMatrix([i+j for i,j in zip( self, kMatrix(y, transposed=True) )], size=self.info.size_orig )
+
+            # 3) A.T + B:
+            elif self.info.isTransposed and (not y.info.isTransposed):
+                assert self.info.size_rotated == y.info.size_orig
+                ret = kMatrix([i+j for i,j in zip( kMatrix(self, transposed=True), y )], size=y.info.size_orig )
+
             # 4) A.T + B.T:
+            elif (self.info.isTransposed) and (y.info.isTransposed):
+                assert self.info.size_rotated == y.info.size_rotated
+                ret = kMatrix([i+j for i,j in zip( kMatrix(self, transposed=True), kMatrix(y, transposed=True) )],
+                              size=self.info.size_rotated)
+
         elif isinstance(y, float) or isinstance(y, int):
-            ret = kMatrix( [i+y for i in self.vector], size=self.size, transposed=self.transposed )
+            ret = kMatrix( [i+y for i in self], size=self.info.size_orig, transposed=self.info.isTransposed )
         else:
             raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
         return ret
@@ -141,20 +219,42 @@ class kMatrix:
         return self.__add__(y)
 
     def __iadd__(self, y): # +=
-        q       = self.__add__(y)
-        self.vector = q.vector
+        q = self.__add__(y)
+        self.buffer = q.buffer
         return(self)
 
     #( --- negative signal --- )#
     def __neg__(self):
-        return kVector([-i for i in self.vector])
+        return kMatrix( [-i for i in self], size=self.info.size_orig )
 
     #( --- difference --- )#
     def __sub__(self, y):
-        if isinstance(y, kVector):
-            ret = kVector([ self.vector[0] - y.vector[0], self.vector[1] - y.vector[1], self.vector[2] - y.vector[2] ])
-        elif isinstance(y, int) or isinstance(y, float):
-            ret = kVector([ self.vector[0] - y, self.vector[1] - y, self.vector[2] - y ])
+        if isinstance(y, kMatrix):
+            # the result shall have the right size, but not transposed
+
+            # 1) A - B:
+            if (not self.info.isTransposed) and (not y.info.isTransposed):
+                assert self.info.size_orig == y.info.size_orig
+                ret = kMatrix( [i-j for i,j in zip(self, y)], size=self.info.size_orig)
+
+            # 2) A - B.T:
+            elif (not self.info.isTransposed) and (y.info.isTransposed):
+                assert self.info.size_orig == y.info.size_rotated
+                ret = kMatrix([i-j for i,j in zip( self, kMatrix(y, transposed=True) )], size=self.info.size_orig )
+
+            # 3) A.T - B:
+            elif self.info.isTransposed and (not y.info.isTransposed):
+                assert self.info.size_rotated == y.info.size_orig
+                ret = kMatrix([i-j for i,j in zip( kMatrix(self, transposed=True), y )], size=y.info.size_orig )
+
+            # 4) A.T - B.T:
+            elif (self.info.isTransposed) and (y.info.isTransposed):
+                assert self.info.size_rotated == y.info.size_rotated
+                ret = kMatrix([i-j for i,j in zip( kMatrix(self, transposed=True), kMatrix(y, transposed=True) )],
+                              size=self.info.size_rotated)
+
+        elif isinstance(y, float) or isinstance(y, int):
+            ret = kMatrix( [i-y for i in self], size=self.info.size_orig, transposed=self.info.isTransposed )
         else:
             raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
         return ret
@@ -213,13 +313,13 @@ class kMatrix:
         tol = 1e-10
         ret = True
         if isinstance(y, kMatrix):
-            if (self.transposed != y.transposed) or (self.size != y.size):
+            if (self.info.isTransposed != y.info.isTransposed) or (self.info.size_orig != y.info.size_orig):
                 ret = False
 
             if 1 == 1:
                 pass
 
-            if not all( [ abs(i-j) <= max( [abs(i), abs(j)] )*tol for i,j in zip(self.vector, y.vector) ] ):
+            if not all( [ abs(i-j) <= max( [abs(i), abs(j)] )*tol for i,j in zip(self, y) ] ):
                 ret = False
         else:
             raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
@@ -231,7 +331,13 @@ if __name__ == "__main__":
     print("==== __init__() ====")
     a = kMatrix([i for i in range(6)], size=(3,2))
 
+    print("==== no deepcopy ====")
+    b = kMatrix(a, size=(3,2))
+    a.buffer.buffer[0] = -10
+    assert b[0,0] == -10
+
     print("==== __getitem__() ====")
+    a = kMatrix([i for i in range(6)], size=(3,2))
     val = 0
     for r in range(3):
         for c in range(2):
@@ -283,30 +389,34 @@ if __name__ == "__main__":
     c = kMatrix(a, size=(2,3)) # 0..5
 
     assert a+b == kMatrix( [1,3,5,7,9,11], size=(3,2), transposed=False )
-    assert (a+b).transposed == False
+    assert c.T+a == kMatrix( [0,4,3,7,6,10], size=(3,2), transposed=False )
+    assert b+c.T == kMatrix( [1,5,4,8,7,11], size=(3,2), transposed=False )
+    assert a.T + b.T == kMatrix( [1,5,9,3,7,11], size=(2,3), transposed=False )
 
-    assert c.T+a == kMatrix( [0,4,3,7,6,10], size=(3,2) )
-    assert (c.T+a).transposed == False
+    assert a+(-1) == kMatrix( [-1,0,1,2,3,4], size=(3,2), transposed=False )
+    assert (-1)+a == kMatrix( [-1,0,1,2,3,4], size=(3,2), transposed=False )
 
-    assert a+(-1) == kMatrix( [0,2,4,6,8,10], size=(3,2), transposed=False )
-    assert a.T+b == None
-    assert a.T+b.T == kMatrix( [0,3,5,7,9,11], size=(3,2), transposed=True )
-    print("a + b    = {:f}".format(a+b))
-    print("a + (-1) = {:f}".format(a+(-1)))
-    print("(-1) + a = {:f}".format((-1)+a))
     a += 7
     assert a == kMatrix( [7,8,9,10,11,12], size=(3,2), transposed=False)
     print("a += 7: {:f}".format(a))
-    print("a.T + b: {:f}".format(a.T+b))
 
     print("==== negative signal ====")
+    assert -a == kMatrix( [-7,-8,-9,-10,-11,-12], size=(3,2) )
     print("-a = {:f}".format(-a))
 
     print("==== difference ====")
-    a = kVector((1,2,3))
-    b = kVector((4,5,6))
-    print("a - b   = {:f}".format(a-b))
-    print("3.0 - a = {:f}".format(3.0-a))
+    a = kMatrix([i for i in range(6)], size=(3,2)) # 0..5
+    b = kMatrix([i+1 for i in range(6)], size=(3,2)) # 1..6
+    c = kMatrix(a, size=(2,3)) # 0..5
+
+    assert a-b      == kMatrix( [-1 for i in range(6) ], size=(3,2), transposed=False )
+    assert a.T-c    == kMatrix( [
+    assert a-b.T
+    assert a.T-b.T
+
+    assert a-1
+    assert 1-a
+
     a -= 3.0
     print("a -= 3.0: {:f}".format(a))
 
