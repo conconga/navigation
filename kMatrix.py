@@ -11,8 +11,8 @@ Lizenz:
 GitHub: 
 """
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
-import numpy as np
-import copy
+#import numpy as np
+#import copy
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
@@ -29,6 +29,9 @@ class kMatrixBuffer:
     def __getitem__(self, index):
         assert index < self.len
         return self.buffer[index]
+
+    def __setitem__(self, index, val):
+        self.buffer[index] = val
 
     def __len__(self):
         return self.len
@@ -130,9 +133,13 @@ class kMatrix:
         """
         index = (row, column)
         """
-        a = self.idx[index]
-        b = self.buffer[a]
         return self.buffer[self.idx[index]]
+
+    def __setitem__(self, index, val):
+        """
+        index = (row, column)
+        """
+        self.buffer[self.idx[index]] = val
 
     def print_summary(self):
         print("vvv sumary vvv")
@@ -140,13 +147,17 @@ class kMatrix:
         print(self.buffer)
         print("^^ sumary ^^")
 
-    def _do_format(self, fmt):
-        #self.print_summary()
-
+    def _get_RC(self):
         if self.info.isTransposed:
             R,C = self.info.size_rotated
         else:
             R,C = self.info.size_orig
+        return R,C
+
+    def _do_format(self, fmt):
+        #self.print_summary()
+
+        R,C = self._get_RC()
 
         txt = "[ ["
         for r in range(R):
@@ -170,15 +181,14 @@ class kMatrix:
 
     @property
     def T(self):
-        return kMatrix(self, size=self.info.size_orig, transposed=True)
+        if self.info.isTransposed:
+            return kMatrix(self, size=self.info.size_orig, transposed=False)
+        else:
+            return kMatrix(self, size=self.info.size_orig, transposed=True)
 
     #( --- iter --- )#
     def __iter__(self):
-        if self.info.isTransposed:
-            R,C = self.info.size_rotated
-        else:
-            R,C = self.info.size_orig
-
+        R,C = self._get_RC()
         for r in range(R):
             for c in range(C):
                 yield self[r,c]
@@ -259,28 +269,31 @@ class kMatrix:
             raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
         return ret
 
-    def __rsub__(self, y):
-        return self.__add__(-y)
+    def __rsub__(self, y): # y - self
+        return y + (-self)
 
     def __isub__(self, y): # -=
         q = self.__sub__(y)
-        self.vector = q.vector
+        self.buffer = q.buffer
         return(self)
 
     #( --- multiplication --- )#
     def __mul__(self, y):
-        if isinstance(y, kVector):
-            if self.transposed:
-                # [1x3] x [3x1]
-                ret = (self.vector[0] * y.vector[0]) + (self.vector[1] * y.vector[1]) + (self.vector[2] * y.vector[2])
-            elif y.transposed:
-                # [3x1] x [1x3]
-                raise(NameError("a matrix class needs to be developed"))
-            else:
-                raise(NameError("WTF??"))
+        if isinstance(y, kMatrix):
+            Rs,Cs = self._get_RC()
+            Ry,Cy = y._get_RC()
+            assert Cs == Ry
+            ret = kMatrix( [0.0 for i in range(Rs*Cy)], size=(Rs, Cy), transposed=False )
+
+            for i in range(Rs):
+                for j in range(Cy):
+                    val = 0.0
+                    for k in range(Cs):
+                        val += self[i,k] * y[k,j]
+                    ret[i,j] = val
 
         elif isinstance(y, int) or isinstance(y, float):
-            ret = kVector([ y*self.vector[0], y*self.vector[1], y*self.vector[2] ])
+            ret = kMatrix( [y*i for i in self], size=self.info.size_orig, transposed=False )
 
         else:
             raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
@@ -292,7 +305,7 @@ class kMatrix:
 
     def __imul__(self, y): # *=
         q = self.__mul__(y)
-        self.vector = q.vector
+        self.buffer = q.buffer
         return(self)
 
     #( --- division --- )#
@@ -306,9 +319,6 @@ class kMatrix:
         raise(NameError("WTF??"))
 
     #( --- miscelaneous --- )#
-    def __abs__(self):
-        return math.sqrt( (self.vector[0]**2) + (self.vector[1]**2) + (self.vector[2]**2) )
-
     def __eq__(self, y):
         tol = 1e-10
         ret = True
@@ -346,11 +356,17 @@ if __name__ == "__main__":
 
     print("a = {:f}".format(a))
     print("a.T = {:f}".format(a.T))
+    print("a.T.T = {:f}".format(a.T.T))
+    print("a.T.T.T = {:f}".format(a.T.T.T))
 
     val = [0,2,4,1,3,5]
     for r in range(2):
         for c in range(3):
             assert a.T[r,c] == val.pop(0)
+
+    print("==== transpose ====")
+    assert a.T.T == a
+    assert a.T.T.T == a.T
 
     print("==== iter ====")
     a = kMatrix([i for i in range(6)], size=(2,3)) # 0..5 [2x3]
@@ -410,33 +426,48 @@ if __name__ == "__main__":
     c = kMatrix(a, size=(2,3)) # 0..5
 
     assert a-b      == kMatrix( [-1 for i in range(6) ], size=(3,2), transposed=False )
-    assert a.T-c    == kMatrix( [
-    assert a-b.T
-    assert a.T-b.T
+    assert a.T-c    == kMatrix( [0,1,2,-2,-1,0], size=(2,3), transposed=False )
+    assert a-c.T    == kMatrix( [0,-2,1,-1,2,0], size=(3,2), transposed=False )
+    assert a.T-b.T  == kMatrix( [-1 for i in range(6)], size=(2,3), transposed=False )
 
-    assert a-1
-    assert 1-a
+    assert a-1 == kMatrix( [-1,0,1,2,3,4], size=(3,2), transposed=False )
+    assert 1-a == kMatrix( [1,0,-1,-2,-3,-4], size=(3,2), transposed=False )
 
     a -= 3.0
+    assert a == kMatrix( [-3,-2,-1,0,1,2], size=(3,2), transposed=False )
     print("a -= 3.0: {:f}".format(a))
 
     print("==== multiplication ====")
-    a = kVector([1,2,3])
-    b = kVector((4,5,6))
+    a = kMatrix([i for i in range(6)], size=(3,2)) # 0..5
+    b = kMatrix([i+1 for i in range(6)], size=(3,2)) # 1..6
+    c = kMatrix(a, size=(2,3)) # 0..5
+
+    #import numpy as np
+    #A = np.asarray([[0,1],[2,3],[4,5]])
+    #B = np.asarray([[1,2],[3,4],[5,6]])
+    #C = np.asarray([[0,1,2],[3,4,5]])
+    #print(A.dot(B.T))
+    #print(A.T.dot(B))
+    #print(A.T.dot(C.T))
+    #print(A.dot(C))
+
+    assert a*b.T == kMatrix([2,4,6,8,18,28,14,32,50], size=(3,3), transposed=False)
+    assert a.T*b == kMatrix([26,32,35,44], size=(2,2), transposed=False)
+    assert a.T*c.T == kMatrix([10,28,13,40], size=(2,2), transposed=False)
+    assert a*c == kMatrix([3,4,5,9,14,19,15,24,33], size=(3,3), transposed=False)
+
+    assert a*2.0 == kMatrix( [0,2,4,6,8,10], size=(3,2), transposed=False)
+    assert 2.0*b == kMatrix( [2,4,6,8,10,12], size=(3,2), transposed=False)
+    b *= -1.0
+    assert b == kMatrix( [-1,-2,-3,-4,-5,-6], size=(3,2), transposed=False)
+
     try:
-        print("a * b = {:f}".format(a*b))
+        print(a*a)
     except:
-        print("a * b =")
-        print("    ^^^ERROR: 'a' should be transposed!")
+        print("ok")
+        a = None
 
-    print("a.T     = {:f}".format(a.T))
-    print("a.T * b = {:f}".format( a.T*b ))
-    print("7.0 * a = {:f}".format( 7.0 * a ))
-    a *= 10
-    print("a *= 10 : {:f}".format(a))
-
-    print("==== norm ====")
-    a = kVector([1,2,3])
-    print("||a|| = {:f}".format(abs(a)))
+    if a is not None:
+        raise(NameError("it should not reach here"))
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
