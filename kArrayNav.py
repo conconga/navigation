@@ -1,0 +1,265 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
+"""
+Datei: kArrayNav.py
+Beschreibung: Mathematical manipulation of vectors and matrices as needed by navigation modelling, and more.
+Autor: Luciano Auguto Kruk
+Erstellt am: 06.09.2025
+Version: 1.0.0
+Lizenz: 
+GitHub: 
+"""
+#>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
+import numpy as np
+from math import sin, cos, sqrt, pi, atan2, asin
+from kArray import kArray
+#import copy
+#>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
+
+#>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
+class kArrayLib:
+    def to_skew(self):
+        vtype = self._type(self.array)
+        if vtype in [ self.TYPE_HORIZONTAL, self.TYPE_VERTICAL ]:
+            val  = self.array.squeeze()
+            assert len(val) == 3
+            return self.__class__( [
+                [0, -val[2], val[1]],
+                [val[2], 0, -val[0]],
+                [-val[1], val[0], 0] 
+            ])
+        else:
+            raise(NameError("this is not a valid vector 3x1"))
+
+#>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
+class kNavTransformations:
+
+    def to_deg(self, val):
+        return val * 180. / pi
+
+    def to_rad(sefl, val):
+        return val * pi / 180.
+
+    def euler2Q(self):
+        """
+        Navigation -- from euler to Q.
+        : input: kArray = [phi, theta, psi]
+        : parameter : phi   [rad]
+        : parameter : theta [rad]
+        : parameter : psi   [rad]
+        : return: kArray = Q4
+        """
+        array = self.array.squeeze()
+        assert len(array) == 3
+        phi   = array[0]
+        theta = array[1]
+        psi   = array[2]
+
+        half_phi   = 0.5*phi
+        half_theta = 0.5*theta
+        half_psi   = 0.5*psi;
+
+        return self.__class__( [
+            (cos(half_phi)*cos(half_theta)*cos(half_psi)) + (sin(half_phi)*sin(half_theta)*sin(half_psi)),
+            (sin(half_phi)*cos(half_theta)*cos(half_psi)) - (cos(half_phi)*sin(half_theta)*sin(half_psi)),
+            (cos(half_phi)*sin(half_theta)*cos(half_psi)) + (sin(half_phi)*cos(half_theta)*sin(half_psi)),
+            (cos(half_phi)*cos(half_theta)*sin(half_psi)) - (sin(half_phi)*sin(half_theta)*cos(half_psi))
+        ] );
+
+    def Q2euler(self):
+        """
+        Navigation -- from Q to euler.
+        : input: kArray = Q4
+        : output   : phi   [rad]
+        : output   : theta [rad]
+        : output   : psi   [rad]
+        : return: kArray( [phi, theta, psi] )
+        """
+
+        q     = self.array.squeeze()
+        assert len(q) == 4
+
+        phi   = atan2(2.0*((q[2]*q[3])+(q[0]*q[1])), (q[0]**2.0)-(q[1]**2.0)-(q[2]**2.0)+(q[3]**2.0));
+        psi   = atan2(2.0*((q[1]*q[2])+(q[0]*q[3])), (q[0]**2.0)+(q[1]**2.0)-(q[2]**2.0)-(q[3]**2.0));
+        try:
+            theta = asin(2.0*((q[0]*q[2])-(q[1]*q[3])));
+        except ValueError:
+            print("ERR: norm(Q) = {:f}".format(np.sqrt(np.sum(q**2))))
+            theta = 0;
+
+        return self.__class__( (phi, theta, psi) )
+
+    def Q2C(self):
+        """
+        Navigation -- from Q to C.
+
+        If Q represents the transformation from 'a' to 'b', the matrix
+        'C' represents 'Ca2b'.
+
+        : input    : kArray = q
+        : output   : C
+        """
+
+        q = self.array.squeeze()
+        assert len(q) == 4
+
+        C = kArray( np.empty((3,3)) )
+        C[0,0] = (q[0]**2.0) + (q[1]**2.0) - (q[2]**2.0) - (q[3]**2.0);
+        C[0,1] = 2.0 * ((q[1]*q[2]) + (q[0]*q[3]));
+        C[0,2] = 2.0 * ((q[1]*q[3]) - (q[0]*q[2]));
+
+        C[1,0] = 2.0 * ((q[1]*q[2]) - (q[0]*q[3]));
+        C[1,1] = (q[0]**2.0) - (q[1]**2.0) + (q[2]**2.0) - (q[3]**2.0);
+        C[1,2] = 2.0 * ((q[2]*q[3]) + (q[0]*q[1]));
+
+        C[2,0] = 2.0 * ((q[1]*q[3]) + (q[0]*q[2]));
+        C[2,1] = 2.0 * ((q[2]*q[3]) - (q[0]*q[1]));
+        C[2,2] = (q[0]**2.0) - (q[1]**2.0) - (q[2]**2.0) + (q[3]**2.0);
+
+        return self.__class__( C )
+
+    def C2euler(self):
+        """
+        Navigation -- from C to (phi,theta,psi)[rad]
+        """
+
+        C = self.array
+        assert C.shape == (3,3)
+        assert(C[2,2] != 0)
+        assert(C[0,0] != 0)
+        assert(C[0,2]>=-1 and C[0,2]<=1)
+
+        phi   = np.arctan2(C[1,2], C[2,2])
+        theta = np.arcsin(-C[0,2])
+        psi   = np.arctan2(C[0,1], C[0,0])
+
+        return self.__class__( (phi, theta, psi) )
+
+    def euler2C(self):
+        """
+        : Convert euler [rad] to C matrix.
+        """
+
+        a = self.array.squeeze()
+        assert len(a) == 3
+
+        return self.__class__( a ).euler2Q().Q2C()
+
+    def C2Q(self):
+        """
+        Navigation -- from C to Q
+        """
+        return self.__class__( self.C2euler().euler2Q() )
+
+    def q1_x_q2(self, q2):
+        """
+        Navigation -- multiplies two quaternions
+
+        Let q1 represent C_a2b, and q2 represent C_b2c.
+        The product C_a2c = C_b2c.C_a2b might be represented
+        by q3 = q1.q2
+
+        output: np.array quaternion q3=q1.q2
+        """
+        q1 = self.array.squeeze()
+        assert len(q1) == 4
+
+        if isinstance(q2, kArrayNav) or isinstance(kArray):
+            q2 = q2.array.squeeze()
+        assert len(q2) == 4
+
+        q3 = np.array([
+            (q1[0]*q2[0])-(q2[1]*q1[1])-(q2[2]*q1[2])-(q2[3]*q1[3]),
+            (q2[0]*q1[1])+(q2[1]*q1[0])+(q2[2]*q1[3])-(q2[3]*q1[2]),
+            (q2[0]*q1[2])+(q2[2]*q1[0])-(q2[1]*q1[3])+(q2[3]*q1[1]),
+            (q2[0]*q1[3])+(q2[3]*q1[0])+(q2[1]*q1[2])-(q2[2]*q1[1])
+        ])
+
+        return self.__class__( q3 )
+
+    def Re2n(self, lat, lon):
+        """
+        Navigation -- calculates Re2n(lat,lon)
+        The result (Re2n) does not change the content of the current object.
+
+        : input    : lat   [rad]
+        : input    : lon   [rad]
+        : output   : Re2n
+        """
+
+        Re2n = np.empty((3,3));
+        Re2n[0,0] = -sin(lat)*cos(lon);
+        Re2n[0,1] = -sin(lat)*sin(lon);
+        Re2n[0,2] = cos(lat);
+        Re2n[1,0] = -sin(lon);
+        Re2n[1,1] = cos(lon);
+        Re2n[1,2] = 0;
+        Re2n[2,0] = -cos(lat)*cos(lon);
+        Re2n[2,1] = -cos(lat)*sin(lon);
+        Re2n[2,2] = -sin(lat);
+
+        return self.__class__( Re2n )
+
+#>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
+class kArrayNav (kArray, kArrayLib, kNavTransformations):
+    def __init__(self, *args, **kargs):
+        if len(args) > 0:
+            super().__init__(*args, **kargs)
+
+#>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
+if __name__ == "__main__":
+    print("==== to_skew() ====")
+    a = kArrayNav( [1,2,3], hvector=False )
+    b = [0,-3,2,3,0,-1,-2,1,0]
+    assert all([i==j for i,j in zip(a.to_skew(),b)])
+    print(a.to_skew())
+
+    print("==== euler - Q - euler ====")
+    for i in range(20):
+        euler_rad = (((np.random.rand(1,3) * 2.0) - 1.0) * 90.) * pi/180
+        euler   = kArrayNav( euler_rad )
+        q4      = euler.euler2Q()
+        euler_t = q4.Q2euler()
+        for j,k in zip(euler, euler_t):
+            assert abs(j-k) < 1e-10
+
+    print("==== Q2C / C2Q ====")
+    for i in range(20):
+        euler_rad = (((np.random.rand(1,3) * 2.0) - 1.0) * 90.) * pi/180
+        euler   = kArrayNav( euler_rad )
+        q4    = euler.euler2Q()
+        C     = q4.Q2C()
+        euler_t = C.C2euler()
+        q4_t  = C.C2Q()
+
+        for j,k in zip(euler, euler_t):
+            assert abs(j-k) < 1e-10
+
+        for j,k in zip(q4, q4_t):
+            assert abs(j-k) < 1e-10
+
+    print("==== q1_x_q2 ====")
+    for i in range(20):
+        euler_rad = (((np.random.rand(1,3) * 2.0) - 1.0) * 90.) * pi/180
+        Ca2b = kArrayNav( euler_rad ).euler2C()
+        qa2b = kArrayNav( euler_rad).euler2Q()
+
+        euler_rad = (((np.random.rand(1,3) * 2.0) - 1.0) * 90.) * pi/180
+        Cb2c = kArrayNav( euler_rad ).euler2C()
+        qb2c = kArrayNav( euler_rad ).euler2Q()
+
+        Ca2c = Cb2c * Ca2b
+        qa2c = qb2c.q1_x_q2(qa2b)
+
+        euler   = Ca2c.C2euler()
+        euler_t = qa2c.Q2euler()
+
+        for j,k in zip(euler, euler_t):
+            assert abs(j-k) < 1e-10
+
+    print("==== Re2n ====")
+    Re2n = kArrayNav().Re2n(0,0)
+    assert Re2n == kArrayNav( [[0,0,1], [0,1,0], [-1,0,0]] )
+
+#>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
