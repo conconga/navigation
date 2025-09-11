@@ -124,9 +124,9 @@ class kArray (kArrayCommon):
         if 'hvector' is None, then the selection is automatic when possible.
         """
 
-        if isinstance(val, list) or isinstance(val, tuple):
+        if isinstance(val, (list, tuple)):
             val = np.asarray( val )
-        elif isinstance(val, int) or isinstance(val,float):
+        elif isinstance(val, (int, float)):
             val = np.asarray( [val] )
         elif isinstance(val, kArray):
             val = val.array
@@ -171,11 +171,11 @@ class kArray (kArrayCommon):
     def T(self):
         vtype = self._type(self.array)
         if vtype == self.TYPE_HORIZONTAL:
-            return kArray( self.array, hvector=False )
+            return self.__class__( self.array, hvector=False )
         elif vtype == self.TYPE_VERTICAL:
-            return kArray( self.array, hvector=True )
+            return self.__class__( self.array, hvector=True )
         else:
-            return kArray( self.array.T )
+            return self.__class__( self.array.T )
 
     #( --- iter --- )#
     def __iter__(self):
@@ -192,10 +192,10 @@ class kArray (kArrayCommon):
             if self.array.shape != y.array.shape:
                 raise(NameError("both arrays shall have the same dimensions"))
             else:
-                ret = kArray( self.array + y.array )
+                ret = self.__class__( self.array + y.array )
 
         elif isinstance(y, int) or isinstance(y, float):
-            ret = kArray( y + self.array )
+            ret = self.__class__( y + self.array )
 
         else:
             raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
@@ -211,7 +211,7 @@ class kArray (kArrayCommon):
 
     #( --- negative signal --- )#
     def __neg__(self):
-        return kArray( -self.array )
+        return self.__class__( -self.array )
 
     #( --- difference --- )#
     def __sub__(self, y):
@@ -219,10 +219,10 @@ class kArray (kArrayCommon):
             if self.array.shape != y.array.shape:
                 raise(NameError("both vector shall have the same dimensions"))
             else:
-                ret = kArray( self.array - y.array )
+                ret = self.__class__( self.array - y.array )
 
         elif isinstance(y, int) or isinstance(y, float):
-            ret = kArray( self.array - y )
+            ret = self.__class__( self.array - y )
 
         else:
             raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
@@ -243,14 +243,14 @@ class kArray (kArrayCommon):
             axb   = self.array.dot(y.array)
             vtype = self._type( np.asarray(axb) )
             if vtype == self.TYPE_HORIZONTAL:
-                ret = kArray( axb, hvector=True )
+                ret = self.__class__( axb, hvector=True )
             elif vtype == self.TYPE_VERTICAL:
-                ret = kArray( axb, hvector=False )
+                ret = self.__class__( axb, hvector=False )
             else:
-                ret = kArray( axb )
+                ret = self.__class__( axb )
 
         elif isinstance(y, int) or isinstance(y, float):
-            ret = kArray( self.array * y )
+            ret = self.__class__( self.array * y )
 
         else:
             raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
@@ -472,6 +472,11 @@ def tests_matrix():
 
     if not ok:
         raise(NameError("it should not reach here"))
+
+    print("==== indexing ====")
+    a = kArray( [[1,2,3], [4,5,6]] ) # 2x3
+    assert a[1,1] == 5
+    assert list(a[1]) == [4,5,6]
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
