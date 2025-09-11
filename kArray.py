@@ -3,7 +3,7 @@
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 """
 Datei: kArray.py
-Beschreibung: Mathematical manipulation of vectors and matrices as needed by navigation modelling, and more.
+Beschreibung: Mathematical manipulation of vectors and matrices.
 Autor: Luciano Auguto Kruk
 Erstellt am: 06.09.2025
 Version: 1.0.0
