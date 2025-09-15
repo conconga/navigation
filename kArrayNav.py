@@ -12,7 +12,7 @@ GitHub:
 """
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 import numpy as np
-from math import sin, cos, sqrt, pi, atan2, asin
+from math import sin, cos, sqrt, pi, atan, atan2, asin
 from kArray import kArray
 #import copy
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
@@ -33,7 +33,32 @@ class kArrayLib:
             raise(NameError("this is not a valid vector 3x1"))
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
-class kNavTransformations:
+class kNavLib:
+    # Earth Elliptic Model #
+    earth_a  = 6378137.0; # [m]
+    earth_b  = 6356752.3142; # [m]
+    wie      = 1.0 * 7.2921151467e-5;
+    earth_f  = (earth_a-earth_b)/earth_a;
+    earth_e  = sqrt(earth_f*(2.0-earth_f));
+    earth_e2 = (earth_e**2.0);
+
+    def Rlambda(self, lat_rad):
+        """
+        : parameter : lat_rad [rad] latitude
+        : output    : R_lbd
+        : (Farrell/Barth, eq 6-13)
+        """
+        return (self.earth_a*(1.-self.earth_e2)) / ((1.-(self.earth_e2*(sin(lat_rad)**2)))**1.5);
+
+    def Rphi(self, lat_rad):
+        """
+        : parameter : lat_rad [rad] latitude
+        : output    : R_phi
+        : (Farrell/Barth, eq 6-14)
+        """
+        return self.earth_a / sqrt(1.-(self.earth_e2*(sin(lat_rad)**2.0)));
+
+#>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 
     def to_deg(self, val):
         return val * 180. / pi
