@@ -98,7 +98,6 @@ class kArrayCommon:
         else:
             self.array[*idx] = val
 
-
     #( --- miscelaneous --- )#
     def __eq__(self, y):
         tol = 1e-10
@@ -112,7 +111,6 @@ class kArrayCommon:
             ret = False
 
         return ret
-
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 class kArray (kArrayCommon):
@@ -162,7 +160,10 @@ class kArray (kArrayCommon):
         #print(self.array)
 
     def __repr__(self):
-        return "<class kArray {:s}>".format(self._do_format("f"))
+        #txt = "<class {:s} ".format(str(self.__class__))
+        #return txt + "{:s}>".format(self._do_format("f"))
+        return "{:s} = !{:s}!".format(str(self.__class__), self._do_format("f"))
+
 
     def __format__(self, fmt):
         return self._do_format(fmt)
