@@ -276,6 +276,9 @@ class kArray (kArrayCommon):
         else:
             raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
 
+    def to_list(self):
+        return self.array.reshape(1,-1).squeeze().tolist()
+
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 def tests_general():
     print("==== type() ====")
