@@ -369,4 +369,61 @@ if __name__ == "__main__":
     Re2n = kArrayNav().Re2n(0,0)
     assert Re2n == kArrayNav( [[0,0,1], [0,1,0], [-1,0,0]] )
 
+    print("==== llh / xyz_e ====")
+    for i in range(20):
+        angles_rad = (((np.random.rand(1,3) * 2.0) - 1.0) * 90.) * pi/180
+        llh   = kArrayNav( angles_rad )
+        xyz   = llh.ecef_llh2xyz()
+        llh_t = xyz.ecef_xyz2llh()
+    
+        for i,j in zip(llh, llh_t):
+            #print("{:f} == {:f} ?".format(i,j))
+            assert abs(i-j) < 1e-3
+
+    #----------------------#
+    # some dynamic tests:
+    #----------------------#
+    print("==== dqdt ====")
+    from   scipy.integrate import odeint;
+    from   numpy           import dot;
+    print()
+
+    #  I: inertial frame
+    #  b: body frame
+    qI2b = kArrayNav( [0,0,0] ).euler2Q()
+
+    # angular rotation between I and b:
+    # \omega_{Ib}^I
+    w_ib_i = kArray( [2.*pi/180., 0, 0] )
+
+    def eqdiff(q,t,w_ib_i):
+        """
+        we will use scipy to call this function, and therefore q shall be a list().
+        """
+        qi2b = kArrayNav(q)
+        RI2b = qi2b.Q2C()
+        dqdt = qi2b.dqdt( RI2b * kArray( w_ib_i, hvector=False ))
+        return dqdt.to_list()
+
+    # a vector described at I:
+    F_i = kArray( [0,0,1], hvector=False )
+    print("F_i = ")
+    print(F_i)
+
+    for t in [1,5,20,90]:
+        print()
+        # after t seconds, the quaternions should be:
+        #print("qI2b.to_list() =")
+        #print(qI2b.to_list())
+        y = odeint(eqdiff, qI2b.to_list(), [0,t], (w_ib_i,))[1,:]
+        # with these euler angles:
+        euler = ((180./pi) * kArrayNav(y).Q2euler()).to_list()
+        print('euler = {:s}'.format(str(euler)))
+
+        # and described at b:
+        F_b = (kArrayNav(y).Q2C() * F_i).to_list()
+
+        print("F_b(phi = {:1.03f}) = [{:1.03f} {:1.03f} {:1.03f}]".format(
+            euler[0], F_b[0], F_b[1], F_b[2]))
+
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
