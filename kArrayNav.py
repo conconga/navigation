@@ -59,6 +59,7 @@ class kNavLib:
         return self.earth_a / sqrt(1.-(self.earth_e2*(sin(lat_rad)**2.0)));
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
+class kNavTransformations(kNavLib):
 
     def to_deg(self, val):
         return val * 180. / pi
@@ -225,6 +226,87 @@ class kNavLib:
         Re2n[2,2] = -sin(lat);
 
         return self.__class__( Re2n )
+
+    def ecef_llh2xyz(self):
+        """
+        : Convert from ECEF-geodetic to XYZe.
+        : input   : llh  = (lat_rad, lon_rad, h_m)
+        : output  : xzy_e [m]
+        """
+
+        geo = self.array.squeeze()
+        assert len(geo) == 3
+        lat = geo[0]
+        lon = geo[1]
+        h   = geo[2]
+
+        s  = sin(lat);
+        RN = self.earth_a / sqrt(1.0 - (self.earth_e2 * s * s));
+
+        return self.__class__( [
+            (RN + h) * cos(lat) * cos(lon),
+            (RN + h) * cos(lat) * sin(lon),
+            ((RN * (1.0 - self.earth_e2)) + h) * sin(lat)
+        ] )
+
+    def ecef_xyz2llh(self):
+        """
+        : Convert from XYZe to ECEF-geodetic.
+        : input  : xyz_e [m]
+        : output : llh  = (lat_rad, lon_rad, h_m)
+        """
+
+        rect = self.array.squeeze()
+        assert len(rect) == 3
+        x = rect[0]
+        y = rect[1]
+        z = rect[2]
+
+        p = sqrt((x * x) + (y * y));
+        h     = 0;
+        RN          = self.earth_a;
+        for i in range(100): # timeout
+            lasth   = h;
+
+            # algorithm (Farrell/Barth p.28)
+            s   = z / (((1.0 - self.earth_e2) * RN) + h);
+            lat = atan((z + (self.earth_e2 * RN * s)) / p);
+            RN  = self.earth_a / sqrt(1.0 - (self.earth_e2 * s * s));
+            h   = (p / cos(lat)) - RN;
+
+            # centimeter accuracy:
+            if abs(lasth-h) < 0.01:
+               break;
+
+        lon = atan2(y, x);
+
+        return self.__class__( [lat, lon, h] )
+
+    def dqdt(self, w):
+        """
+        The derivative of the quaternions is $\dot{q} = 1/2 .B(w).q$
+        This funtion returns $\dot{q}$.
+        : input  : q4
+        : output : d(q4)dt
+        """
+
+        K      = 1e1
+        cq     = kArray( [i for i in self], hvector=False )
+        cq2    = kArray( [i*i for i in self], hvector=False )
+        W      = kArray( w, hvector=True )
+        epslon = 1.0 - sum(cq2.to_list())
+
+        B = kArray( [
+            [   0, -W[0][0], -W[0][1], -W[0][2]],
+            [W[0][0],     0,  W[0][2], -W[0][1]],
+            [W[0][1], -W[0][2],     0,  W[0][0]],
+            [W[0][2],  W[0][1], -W[0][0],     0]
+        ] )
+
+        dq = (0.5 * B * cq) + (K*epslon*cq)
+        return self.__class__( dq )
+
+#>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 class kArrayNav (kArray, kArrayLib, kNavTransformations):
