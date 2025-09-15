@@ -178,6 +178,10 @@ class kArray (kArrayCommon):
         else:
             return self.__class__( self.array.T )
 
+    @property
+    def shape(self):
+        return self.array.shape
+
     #( --- iter --- )#
     def __iter__(self):
         if self._type(self.array) == self.TYPE_SINGLEVALUE:
