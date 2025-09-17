@@ -32,6 +32,23 @@ class kArrayLib:
         else:
             raise(NameError("this is not a valid vector 3x1"))
 
+    def X(self, y):
+        """
+        Calculates the cross-product between self and y.
+        : input  : y = [3x1] vector
+        : return : self X y
+        """
+        assert self.shape == (3,1)
+        assert y.shape == (3,1)
+        a = self.array.squeeze()
+        b = y.array.squeeze()
+
+        return self.__class__( [
+            (a[1]*b[2]) - (a[2]*b[1]),
+            (a[2]*b[0]) - (a[0]*b[2]),
+            (a[0]*b[1]) - (a[1]*b[0])
+        ], hvector=False )
+
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 class kNavLib:
     # Earth Elliptic Model #
@@ -321,6 +338,26 @@ if __name__ == "__main__":
     b = [0,-3,2,3,0,-1,-2,1,0]
     assert all([i==j for i,j in zip(a.to_skew(),b)])
     print(a.to_skew())
+
+    print("==== cross product ====")
+    a = kArrayNav( [5,-2,4], hvector=True )
+    b = kArrayNav( [-1,2,3], hvector=True )
+
+    try:
+        ok = False
+        c  = a.X(b)
+    except:
+        ok = True
+    if not ok:
+        raise(NameError("should not get here!"))
+
+    c1 = a.T.X(b.T)
+    c2 = np.cross(a().squeeze(), b().squeeze())
+    c3 = a.to_skew() * b.T
+
+    for i,j,k in zip(c1,c2,c3):
+        assert abs(i-j) < 1e-10
+        assert abs(i-k) < 1e-10
 
     print("==== euler - Q - euler ====")
     for i in range(20):
