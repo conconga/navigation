@@ -29,6 +29,7 @@
         representations:](#transformation-among-earth-centered-earth-fixed-representations)
     -   [<span class="toc-section-number">2.11</span> derivative of
         quaternions:](#derivative-of-quaternions)
+-   [<span class="toc-section-number">3</span> How to use](#how-to-use)
 
 # Introduction
 
@@ -107,3 +108,9 @@ horizontal.
 ## derivative of quaternions:
 
     dqdt = qi2b.dqdt( w_ib_b )
+
+# How to use
+
+    import sys
+    sys.path.append(< up to where folder karraynav is >)
+    from karraynav import kArrayNav

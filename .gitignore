@@ -1,1 +1,2 @@
 example_*.py
+*__pycache__*

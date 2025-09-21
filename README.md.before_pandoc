@@ -83,3 +83,9 @@ llh = xyz.ecef_xyz2llh()
 dqdt = qi2b.dqdt( w_ib_b )
 ```
 
+# How to use
+```
+import sys
+sys.path.append(< up to where folder karraynav is >)
+from karraynav import kArrayNav
+```
