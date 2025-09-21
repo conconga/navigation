@@ -81,6 +81,6 @@ llh = xyz.ecef_xyz2llh()
 
 ## derivative of quaternions:
 ```
-dqdt = q4.dqdt( w_ib_b )
+dqdt = qi2b.dqdt( w_ib_b )
 ```
 
