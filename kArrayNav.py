@@ -78,11 +78,13 @@ class kNavLib:
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 class kNavTransformations(kNavLib):
 
-    def to_deg(self, val):
-        return val * 180. / pi
+    def to_deg(self):
+        return self.__class__(self.array * 180. / pi)
+        #return val * 180. / pi
 
-    def to_rad(sefl, val):
-        return val * pi / 180.
+    def to_rad(self):
+        return self.__class__(self.array * pi / 180.)
+        #return val * pi / 180.
 
     def euler2Q(self):
         """
@@ -358,6 +360,14 @@ if __name__ == "__main__":
     for i,j,k in zip(c1,c2,c3):
         assert abs(i-j) < 1e-10
         assert abs(i-k) < 1e-10
+
+    print("==== to_rad, to_deg ====")
+    euler_deg   = kArrayNav( [-30, 10, 170] )
+    euler_rad   = euler_deg.to_rad()
+    euler_deg_t = euler_rad.to_deg()
+
+    for i,j in zip(euler_deg, euler_deg_t):
+        assert abs(i-j) < 1e-10
 
     print("==== euler - Q - euler ====")
     for i in range(20):
