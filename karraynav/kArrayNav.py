@@ -13,7 +13,7 @@ GitHub:
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 import numpy as np
 from math import sin, cos, sqrt, pi, atan, atan2, asin
-from kArray import kArray
+from .kArray import kArray
 #import copy
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 

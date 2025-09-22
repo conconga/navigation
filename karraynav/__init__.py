@@ -1,1 +1,1 @@
-from kArrayNav import kArrayNav
+from .kArrayNav import kArrayNav
