@@ -14,8 +14,14 @@ matrices, etc.
 ```
 kArrayNav( [1,2,3], hvector={True|False} )
 ```
-This is the standard sintax to create a vector-object. The booleand parameter `hvector` defines whether the vector is
+This is the standard sintax to create a vector-object. The boolean parameter `hvector` defines whether the vector is
 vertical or horizontal.
+
+## to create a matrix:
+```
+kArrayNav( [[1,2,3],[4,5,6]] )
+```
+This is the standard sintax to create a matrix. The boolean parameter `hvector` is not used here.
 
 ## transposing:
 ```

@@ -3,31 +3,33 @@
 -   [<span class="toc-section-number">2</span> kArrayNav](#karraynav)
     -   [<span class="toc-section-number">2.1</span> to create a
         vector:](#to-create-a-vector)
-    -   [<span class="toc-section-number">2.2</span>
+    -   [<span class="toc-section-number">2.2</span> to create a
+        matrix:](#to-create-a-matrix)
+    -   [<span class="toc-section-number">2.3</span>
         transposing:](#transposing)
-    -   [<span class="toc-section-number">2.3</span> to convert a 3D
+    -   [<span class="toc-section-number">2.4</span> to convert a 3D
         vector to its respective
         skew-matrix:](#to-convert-a-3d-vector-to-its-respective-skew-matrix)
-    -   [<span class="toc-section-number">2.4</span> to convert to/from
+    -   [<span class="toc-section-number">2.5</span> to convert to/from
         rad/deg:](#to-convert-tofrom-raddeg)
-    -   [<span class="toc-section-number">2.5</span> to calculate the
+    -   [<span class="toc-section-number">2.6</span> to calculate the
         cross-product among
         3D-vectors:](#to-calculate-the-cross-product-among-3d-vectors)
-    -   [<span class="toc-section-number">2.6</span> to convert to/from
+    -   [<span class="toc-section-number">2.7</span> to convert to/from
         euler angles from/to
         quaternions:](#to-convert-tofrom-euler-angles-fromto-quaternions)
-    -   [<span class="toc-section-number">2.7</span> to convert to/from
+    -   [<span class="toc-section-number">2.8</span> to convert to/from
         quaternions from/to
         transformation-matrix:](#to-convert-tofrom-quaternions-fromto-transformation-matrix)
-    -   [<span class="toc-section-number">2.8</span> to multiply
+    -   [<span class="toc-section-number">2.9</span> to multiply
         quaternions:](#to-multiply-quaternions)
-    -   [<span class="toc-section-number">2.9</span> transformation
+    -   [<span class="toc-section-number">2.10</span> transformation
         matrix from ‘earth’ to ‘navigation’
         frame:](#transformation-matrix-from-earth-to-navigation-frame)
-    -   [<span class="toc-section-number">2.10</span> transformation
+    -   [<span class="toc-section-number">2.11</span> transformation
         among earth-centered-earth-fixed
         representations:](#transformation-among-earth-centered-earth-fixed-representations)
-    -   [<span class="toc-section-number">2.11</span> derivative of
+    -   [<span class="toc-section-number">2.12</span> derivative of
         quaternions:](#derivative-of-quaternions)
 -   [<span class="toc-section-number">3</span> How to use](#how-to-use)
 
@@ -49,9 +51,16 @@ convertion among transformation matrices, etc.
 
     kArrayNav( [1,2,3], hvector={True|False} )
 
-This is the standard sintax to create a vector-object. The booleand
+This is the standard sintax to create a vector-object. The boolean
 parameter `hvector` defines whether the vector is vertical or
 horizontal.
+
+## to create a matrix:
+
+    kArrayNav( [[1,2,3],[4,5,6]] )
+
+This is the standard sintax to create a matrix. The boolean parameter
+`hvector` is not used here.
 
 ## transposing:
 
