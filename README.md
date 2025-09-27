@@ -110,8 +110,8 @@ This is the standard sintax to create a matrix. The boolean parameter
 
 ## transformation among earth-centered-earth-fixed representations:
 
-    llh = kArrayNav( angles_rad )
-    xyz = llh.ecef_llh2xyz()
+    llh = kArrayNav( [lat_rad, long_rad, altitude_m] ) # latitude, longitude, altitude
+    xyz = llh.ecef_llh2xyz()                           # x_e, y_e, z_e [m]
     llh = xyz.ecef_xyz2llh()
 
 ## derivative of quaternions:
