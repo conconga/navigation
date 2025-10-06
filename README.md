@@ -31,6 +31,10 @@
         representations:](#transformation-among-earth-centered-earth-fixed-representations)
     -   [<span class="toc-section-number">2.12</span> derivative of
         quaternions:](#derivative-of-quaternions)
+    -   [<span class="toc-section-number">2.13</span> local gravity in
+        geografic frame:](#local-gravity-in-geografic-frame)
+    -   [<span class="toc-section-number">2.14</span> derivative of
+        lat/long/alt:](#derivative-of-latlongalt)
 -   [<span class="toc-section-number">3</span> How to use](#how-to-use)
 
 # Introduction
@@ -117,6 +121,14 @@ This is the standard sintax to create a matrix. The boolean parameter
 ## derivative of quaternions:
 
     dqdt = qi2b.dqdt( w_ib_b )
+
+## local gravity in geografic frame:
+
+    local_gravity_n = gravity_n ( latitude, altitude )
+
+## derivative of lat/long/alt:
+
+    dLLHdt = dLLH_dt(...)
 
 # How to use
 

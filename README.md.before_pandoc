@@ -89,6 +89,16 @@ llh = xyz.ecef_xyz2llh()
 dqdt = qi2b.dqdt( w_ib_b )
 ```
 
+## local gravity in geografic frame:
+```
+local_gravity_n = gravity_n ( latitude, altitude )
+```
+
+## derivative of lat/long/alt:
+```
+dLLHdt = dLLH_dt(...)
+```
+
 # How to use
 ```
 import sys
