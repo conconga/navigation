@@ -88,7 +88,7 @@ class kNavLib:
         s2  = (sin(lat_rad))**2
         s22 = (sin(2.0*lat_rad))**2
         gamma_lat   = 9.780327 * ( 1. + (0.0053024*s2) - (0.0000058*s22) )
-        gamma_lat_h = gamma_lat - ((3.0877e-6 - (0.0044e-6*s2) )*h_m) + (0.072e-12*(h**2))
+        gamma_lat_h = gamma_lat - ((3.0877e-6 - (0.0044e-6*s2) )*h_m) + (0.072e-12*(h_m**2))
 
         return gamma_lat_h
 
