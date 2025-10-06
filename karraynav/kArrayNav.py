@@ -75,6 +75,23 @@ class kNavLib:
         """
         return self.earth_a / sqrt(1.-(self.earth_e2*(sin(lat_rad)**2.0)));
 
+    def gravity(self, lat_rad, h_m):
+        """
+        Using the geografic reference frame, this model allows:
+            gravity_n = [0,0,output]
+        (see Farrell, (6-141) and (6-142))
+
+        : parameter : lat_rad [rad]  latitude
+        : parameter : h_m     [m]    altitude above sea level
+        : return    : gravity [m/s2] model of gravity for WGS-84
+        """
+        s2  = (sin(lat_rad))**2
+        s22 = (sin(2.0*lat_rad))**2
+        gamma_lat   = 9.780327 * ( 1. + (0.0053024*s2) - (0.0000058*s22) )
+        gamma_lat_h = gamma_lat - ((3.0877e-6 - (0.0044e-6*s2) )*h_m) + (0.072e-12*(h**2))
+
+        return gamma_lat_h
+
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 class kNavTransformations(kNavLib):
 
@@ -472,5 +489,22 @@ if __name__ == "__main__":
 
         print("F_b(phi = {:1.03f}) = [{:1.03f} {:1.03f} {:1.03f}]".format(
             euler[0], F_b[0], F_b[1], F_b[2]))
+
+    # gravity:
+    import matplotlib.pylab as plt
+
+    plt.figure(1).clf()
+    fig, ax = plt.subplots(1,1,num=1)
+    tmp = kArrayNav([0])
+    leg = list()
+    for lat in kArrayNav( [0, 45, 80] ).to_rad():
+        leg.append("{:1.1f}".format(lat*180/pi))
+        g = list()
+        for h in np.linspace(0, 3000, 20):
+            g.append( tmp.gravity(lat, h) )
+        ax.plot(np.linspace(0,3000,20), g)
+
+    ax.legend(leg)
+    plt.show(block=False)
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
