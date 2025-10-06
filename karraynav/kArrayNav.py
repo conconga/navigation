@@ -92,6 +92,30 @@ class kNavLib:
 
         return gamma_lat_h
 
+    def dLat_dt(self, vN, lat_rad, h_m):
+        """
+        Calculates the derivative of the geografic latitude.
+
+        : parameter : vN      : [m/s] velocity-north
+        : parameter : lat_rad : [rad] latitude
+        : parameter : h_m     : [m]   altitude above sea level
+        : return    : d(latitude)/dt : [rad/s]
+        """
+
+        return vN / (self.Rlambda(lat_rad) + h_m)
+
+    def dLong_dt(self, vE, lat_rad, h_m):
+        """
+        Calculates the derivative of the longitude.
+
+        : parameter : vE      : [m/s] velocity-east
+        : parameter : lat_rad : [rad] latitude
+        : parameter : h_m     : [m]   altitude above sea level
+        : return    : d(longitude)/dt : [rad/s]
+        """
+
+        return vE / (cos(lat_rad) * (self.Rphi(lat_rad) + h_m))
+
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 class kNavTransformations(kNavLib):
 
