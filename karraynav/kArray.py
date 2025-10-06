@@ -114,13 +114,21 @@ class kArrayCommon:
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 class kArray (kArrayCommon):
-    def __init__(self, val, hvector=None):
+    def __init__(self, *args, hvector=None):
         """
         When 'val' is given as a list, 'hvector' is used to indicate whether the
         vector to be created is horizontal (row, True) or vertical (column, False).
 
-        if 'hvector' is None, then the selection is automatic when possible.
+        If no positional value is provided, the object will create a matrix [1x1] with a single zero.
+        If 'hvector' is None, then the selection is automatic when possible.
         """
+
+        assert len(args) in [0,1]
+        if len(args) == 0:
+            # empty matrix:
+            val = [0,]
+        else:
+            val = args[0]
 
         if isinstance(val, (list, tuple)):
             val = np.asarray( val )
@@ -316,14 +324,14 @@ def tests_vector():
     print(kArray([1]))
     print("kArray([1,2,3]) = ")
     print(kArray([1,2,3]))
-    print("kArray([1,2,3],True) = ")
-    print(kArray([1,2,3],True))
-    print("kArray([1,2,3],False) = ")
-    print(kArray([1,2,3],False))
-    print("kArray([[1,2,3]], False) = ")
-    print(kArray([[1,2,3]], False))
-    print("kArray([[1],[2]], True) = ")
-    print(kArray([[1],[2]], True))
+    print("kArray([1,2,3],hvector=True) = ")
+    print(kArray([1,2,3],hvector=True))
+    print("kArray([1,2,3],hvector=False) = ")
+    print(kArray([1,2,3],hvector=False))
+    print("kArray([[1,2,3]], hvector=False) = ")
+    print(kArray([[1,2,3]], hvector=False))
+    print("kArray([[1],[2]], hvector=True) = ")
+    print(kArray([[1],[2]], hvector=True))
 
     print("==== transpose ====")
     a = kArray([1,2,3], hvector=True)
