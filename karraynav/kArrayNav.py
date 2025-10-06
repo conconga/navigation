@@ -366,6 +366,34 @@ class kNavTransformations(kNavLib):
         dq = (0.5 * B * cq) + (K*epslon*cq)
         return self.__class__( dq )
 
+    def gravity_n(self, lat_rad, h_m):
+        """
+        Calculates the local gravity vector in the geografic frame (n).
+
+        : parameter : lat_rad [rad]  latitude
+        : parameter : h_m     [m]    altitude above sea level
+        : return    : vector with local gravity [3x1]
+        """
+
+        return self.__class__( [0,0,self.gravity(lat_rad, h_m)], hvector=False )
+
+    def dLLH_dt(self, vN, vE, vD, lat_rad, h_m):
+        """
+        Calculates the vector with the derivatives of the
+        latitude, longitude and altitude.
+
+        : parameter : vN      : [m/s] velocity-north
+        : parameter : vE      : [m/s] velocity-east
+        : parameter : vD      : [m/s] velocity-down
+        : parameter : lat_rad : [rad] latitude
+        : parameter : h_m     : [m]   altitude above sea level
+        """
+
+        return self.__class__( [
+            self.dLat_dt(vN, lat_rad, h_m),
+            self.dLong_dt(vE, lat_rad, h_m),
+            -vD ], hvector=False )
+
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
