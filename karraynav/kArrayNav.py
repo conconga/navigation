@@ -159,10 +159,35 @@ class kNavTransformations(kNavLib):
     def euler2C(self):
         """
         : Convert euler [rad] to C matrix.
+        : order = [phi, theta, psi] [rad]
         """
 
         a = self.array.squeeze()
         assert len(a) == 3
+
+        if False:
+            phi    = a[0]
+            theta  = a[1]
+            psi    = a[2]
+            cphi   = cos(phi)
+            ctheta = cos(theta)
+            cpsi   = cos(psi)
+            sphi   = sin(phi)
+            stheta = sin(theta)
+            spsi   = sin(psi)
+
+            C = self.__class__( np.empty((3,3)) )
+            C[0][0] = cpsi*ctheta
+            C[0][1] = spsi*ctheta
+            C[0][2] = -stheta
+            C[1][0] = (-spsi*cphi) + (cpsi*stheta*sphi)
+            C[1][1] = (cpsi*cphi) + (spsi*stheta*sphi)
+            C[1][2] = ctheta * sphi
+            C[2][0] = (sphi*sphi) + (cpsi*stheta*cphi)
+            C[2][1] = (-cpsi*sphi) + (sphi*stheta*cphi)
+            C[2][2] = ctheta * cphi
+
+            #return C
 
         return self.__class__( a ).euler2Q().Q2C()
 
