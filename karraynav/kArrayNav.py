@@ -197,6 +197,15 @@ class kNavTransformations(kNavLib):
         """
         return self.__class__( self.C2euler().euler2Q() )
 
+    def Qinv(self):
+        """
+        Calculates the inverse of a quaternion. This is similar to inverting a transformation matrix.
+        """
+        shape = self.array.shape
+        tmp   = self.array.squeeze().tolist()
+        ret   = [tmp[0]] + [-i for i in tmp[1:]]
+        return self.__class__( np.asarray(ret).reshape(shape) / sum( [i**2 for i in ret] ))
+
     def q1_x_q2(self, q2):
         """
         Navigation -- multiplies two quaternions
@@ -601,6 +610,33 @@ class kArrayNavTests:
             assert euler_k1_R_b2n[0][i] > euler_n2b[0][i]
             assert euler_k1_q_n2b[0][i] > euler_n2b[0][i]
             assert abs( euler_k1_R_b2n[0][i] - euler_k1_q_n2b[0][i] ) < 1e-4
+
+        # Tests #5
+        # Here we want to check whether inverting a quaternion has the same effect as
+        # inverting a transformation matrix.
+        for i in range(20):
+            phi   = 20*np.random.randn()
+            theta = 20*np.random.randn()
+            psi   = 20*np.random.randn()
+
+            euler = kArrayNav( [phi, theta, psi] ).to_rad()
+            R = euler.euler2C()
+
+            q = euler.euler2Q()
+            q_inv = q.Qinv()
+
+            euler_from_q_inv = q_inv.Q2euler().to_deg()
+            euler_from_R_inv = R.T.C2euler().to_deg()
+            assert euler_from_q_inv == euler_from_R_inv
+
+            if False:
+                print("euler angles at [k]")
+                print(euler.to_deg())
+                print("euler angles at [k+1] (from q)")
+                print(euler_from_q_inv)
+                print("euler angles at [k+1] (from R)")
+                print(euler_from_R_inv)
+                print()
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 if __name__ == "__main__":
