@@ -203,7 +203,7 @@ class kNavTransformations(kNavLib):
 
         Let q1 represent C_a2b, and q2 represent C_b2c.
         The product C_a2c = C_b2c.C_a2b might be represented
-        by q3 = q1.q2
+        by q_a2c = q_b2c.q_a2b
 
         output: np.array quaternion q3=q1.q2
         """
