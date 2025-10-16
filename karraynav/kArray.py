@@ -222,8 +222,11 @@ class kArray (kArrayCommon):
     def __radd__(self, y): # y + self
         return self.__add__(y)
 
-    def __iadd__(self, y): # +=
-        self.array += y
+    def __iadd__(self, y): # self += y
+        if isinstance(y, kArray):
+            self.array += y.array
+        else:
+            self.array += y
         return(self)
 
     #( --- negative signal --- )#
