@@ -285,6 +285,21 @@ class kArray (kArrayCommon):
         self = self * y
         return(self)
 
+    #( --- division --- )#
+    def __truediv__(self, y):
+        if isinstance(y, float):
+            return self.__class__( self.array / y )
+        else:
+            raise(NameError("still not supported"))
+        return ret
+
+    def __rtruediv__(self, y):
+        raise(NameError("still not supported"))
+
+    def __itruediv__(self, y): # /=
+        self.array /= y
+        return(self)
+
     #( --- miscelaneous --- )#
     def __abs__(self):
         vtype = self._type(self.array)
