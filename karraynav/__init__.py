@@ -1,1 +1,1 @@
-from .kArrayNav import kArrayNav, kNavLib
+from .kArrayNav import kArrayNav, kNavLib, kArrayNavTests
