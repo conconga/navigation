@@ -516,4 +516,57 @@ if __name__ == "__main__":
     ax.legend(leg)
     plt.show(block=False)
 
+    #----------------------#
+    # coherence tests
+    # (sense among frames)
+    #----------------------#
+    list_euler = [
+            kArrayNav( [0,0,45] ).to_rad(),
+            kArrayNav( [0,45,0] ).to_rad(),
+            kArrayNav( [45,0,0] ).to_rad(),
+    ]
+
+    # with the euler angles above, the transformation of vector [1,0,0]_b will lead to these results:
+    sq2 = sqrt(2.)/2.
+    list_results_at_n = [
+            kArrayNav( [sq2, sq2, 0], hvector=False ),
+            kArrayNav( [sq2, 0, -sq2], hvector=False ),
+            kArrayNav( [1,0,0], hvector=False ),
+    ]
+
+    # Tests #1
+    for euler,vn in zip(list_euler, list_results_at_n):
+        # from a fixed reference frame 'n' to 'b'
+        Cn2b = euler.euler2C()
+
+        # transforming a vector from 'b' to 'n':
+        rb = kArrayNav( [1,0,0], hvector=False )
+        rn = Cn2b.T * rb
+        assert rn == vn
+
+    # Tests #2
+    # An angular velocity [0,0,1] shall increase \psi
+    # The angle \psi refers to how 'n' sees 'b'.
+    Cn2b   = kArrayNav( [0,0,0] ).to_rad().euler2C()
+    Cb2n   = Cn2b.T # to use w_nb_b
+
+    w_nb_b = kArrayNav( [0,0,1], hvector=False )
+    Cb2n_p = Cb2n * w_nb_b.to_skew()   # derivative of a tranformation matrix
+    Cb2n_step = Cb2n + (0.01 * Cb2n_p) # small integration step
+    euler  = Cb2n_step.T.C2euler()     # transposing to obtain the euler again
+    assert euler[0][2] > 0
+    
+    # Tests #3
+    # An angular velocity [1,1,1] shall increase all euler angles.
+    # The euler angles refer to how 'n' sees 'b'.
+    Cn2b   = kArrayNav( [0,0,0] ).to_rad().euler2C()
+    Cb2n   = Cn2b.T # to use w_nb_b
+
+    w_nb_b = kArrayNav( [1,1,1], hvector=False )
+    Cb2n_p = Cb2n * w_nb_b.to_skew()   # derivative of a tranformation matrix
+    Cb2n_step = Cb2n + (0.01 * Cb2n_p) # small integration step
+    euler  = Cb2n_step.T.C2euler()     # transposing to obtain the euler again
+    for i in euler[0]:
+        assert i > 0
+
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
