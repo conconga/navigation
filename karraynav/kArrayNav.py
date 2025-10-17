@@ -12,7 +12,8 @@ GitHub:
 """
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 import numpy as np
-from math import sin, cos, sqrt, pi, atan, atan2, asin
+from math import sin, cos, tan, sqrt, pi, atan, atan2, asin
+from mpmath import sec
 from .kArray import kArray
 from .kNavLib import kNavLib
 #import copy
@@ -310,6 +311,17 @@ class kNavTransformations(kNavLib):
 
         return self.__class__( [lat, lon, h] )
 
+    def gravity_n(self, lat_rad, h_m):
+        """
+        Calculates the local gravity vector in the geografic frame (n).
+
+        : parameter : lat_rad [rad]  latitude
+        : parameter : h_m     [m]    altitude above sea level
+        : return    : vector with local gravity [3x1]
+        """
+
+        return self.__class__( [0,0,self.gravity(lat_rad, h_m)], hvector=False )
+
     def dqdt(self, w):
         """
         The derivative of the quaternions is $\dot{q} = 1/2 .B(w).q$
@@ -334,16 +346,33 @@ class kNavTransformations(kNavLib):
         dq = (0.5 * B * cq) + (K*epslon*cq)
         return self.__class__( dq )
 
-    def gravity_n(self, lat_rad, h_m):
+    def dEulerDt(self, w):
         """
-        Calculates the local gravity vector in the geografic frame (n).
-
-        : parameter : lat_rad [rad]  latitude
-        : parameter : h_m     [m]    altitude above sea level
-        : return    : vector with local gravity [3x1]
+        Calculates the derivative vector of the euler angles.
+        See Titerton (3-52).
+        : input  : [phi, theta, psi] [rad]
+        : return : d[phi, theta, psi]/dt [rad/s]
         """
 
-        return self.__class__( [0,0,self.gravity(lat_rad, h_m)], hvector=False )
+        a = self.array.squeeze()
+        assert len(a) == 3
+        phi    = a[0]
+        theta  = a[1]
+        psi    = a[2]
+
+        if isinstance(w, list):
+            b = w
+        elif isinstance(w, self.__class__):
+            b = w.array.squeeze().tolist()
+        else:
+            raise(NameError("this type is still not supported"))
+
+        aux = (b[1]*sin(phi)) + (b[2]*cos(phi))
+        dphi = (aux * tan(theta)) + b[0]
+        dtta = (b[1]*cos(phi)) - (b[2]*sin(phi))
+        dpsi = aux * sec(theta)
+
+        return self.__class__( [dphi, dtta, dpsi] )
 
     def dLLH_dt(self, vN, vE, vD, lat_rad, h_m):
         """
@@ -372,6 +401,8 @@ class kArrayNav (kArray, kArrayLib, kNavTransformations):
 class kArrayNavTests:
 
     def do_tests(self):
+        import scipy.integrate  as Int
+
         print("==== to_skew() ====")
         a = kArrayNav( [1,2,3], hvector=False )
         b = [0,-3,2,3,0,-1,-2,1,0]
@@ -525,7 +556,6 @@ class kArrayNavTests:
             ax.plot(np.linspace(0,3000,20), g)
 
         ax.legend(leg)
-        plt.show(block=False)
 
         #----------------------#
         # coherence tests
@@ -637,6 +667,50 @@ class kArrayNavTests:
                 print("euler angles at [k+1] (from R)")
                 print(euler_from_R_inv)
                 print()
+
+        # Tests #6
+        # To compare the effect of w_nb_b on the euler angles using two methods:
+        #  1) dEulerDt()
+        #  2) Rb2n_p = Rb2n * w_nb_b
+        phi   = 20*np.random.randn()
+        theta = 20*np.random.randn()
+        psi   = 20*np.random.randn()
+
+        def test6_eqdiff_dEulerDt(y, t, *args):
+            w = args[0]
+            dEuler = kArrayNav(y).dEulerDt(w).to_list()
+            return dEuler
+
+        def test6_eqdiff_dRdt(y, t, *args):
+            w = args[0]
+            R = kArrayNav( np.asarray(y).reshape(3,3) )
+            Rp = R * kArrayNav(w).to_skew()
+            return Rp.to_list()
+
+        w   = kArrayNav( [10,10,10] ).to_rad().to_list()
+        T   = np.linspace(0, 5, 5*100)
+
+        ret = Int.odeint( test6_eqdiff_dEulerDt, kArrayNav([phi, theta, psi]).to_rad().to_list(), T, args=(w,) )
+        ret = [kArrayNav(i).to_deg().to_list() for i in ret]
+
+        Ret = Int.odeint( test6_eqdiff_dRdt, kArrayNav([phi, theta, psi]).to_rad().euler2C().T.to_list(), T, args=(w,) )
+        Ret = [(kArrayNav( np.asarray(i).reshape(3,3) ).T.C2euler().to_deg() + 0.1).to_list() for i in Ret]
+        # this 0.1 above is just to separate the curves on the next graph
+
+        plt.figure(2).clf()
+        fig,ax = plt.subplots(1,1,num=2)
+        ax.plot(T, ret)
+        ax.plot(T, Ret)
+        ax.grid(True)
+
+        for i,j in zip(ret, Ret):
+            for m,n in zip(i,j):
+                assert abs(m-n) < 0.11
+
+        ###########################
+        plt.show(block=False)
+        ###########################
+        print("ok")
 
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 if __name__ == "__main__":
