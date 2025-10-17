@@ -63,6 +63,13 @@ C     = q4.Q2C()
 q4    = C.C2Q()
 ```
 
+## to convert from/to euler angles to/from transformation-matrix:
+```
+euler = kArrayNav( [10,20,30] ).to_rad()
+C     = euler.euler2C()
+euler = C.C2euler().to_deg()
+```
+
 ## to multiply quaternions:
 ```
 qa2b = ...                  # from 'a' to 'b'
@@ -89,6 +96,21 @@ llh = xyz.ecef_xyz2llh()
 dqdt = qi2b.dqdt( w_ib_b )
 ```
 
+## inverse of a quaternion:
+```
+euler = kArrayNav( [10,20,30] ).to_rad()
+q4    = euler.euler2Q()
+q_inv = q4.Qinv()
+e2    = q_inv.Q2euler().to_deg()
+```
+
+## derivative of euler angles:
+```
+euler = kArrayNav( [10,20,30] ).to_rad()
+w     = kArrayNav( [-1,0,1] ) # [rad/s]
+dEdt  = euler.dEulerDt(w)
+```
+
 ## local gravity in geografic frame:
 ```
 local_gravity_n = gravity_n ( latitude, altitude )
@@ -104,4 +126,9 @@ dLLHdt = dLLH_dt(...)
 import sys
 sys.path.append(< up to where folder karraynav is >)
 from karraynav import kArrayNav
+```
+
+# How to test it
+```
+kArrayNavTests().do_tests()
 ```

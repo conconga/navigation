@@ -21,21 +21,30 @@
     -   [<span class="toc-section-number">2.8</span> to convert to/from
         quaternions from/to
         transformation-matrix:](#to-convert-tofrom-quaternions-fromto-transformation-matrix)
-    -   [<span class="toc-section-number">2.9</span> to multiply
+    -   [<span class="toc-section-number">2.9</span> to convert from/to
+        euler angles to/from
+        transformation-matrix:](#to-convert-fromto-euler-angles-tofrom-transformation-matrix)
+    -   [<span class="toc-section-number">2.10</span> to multiply
         quaternions:](#to-multiply-quaternions)
-    -   [<span class="toc-section-number">2.10</span> transformation
+    -   [<span class="toc-section-number">2.11</span> transformation
         matrix from ‘earth’ to ‘navigation’
         frame:](#transformation-matrix-from-earth-to-navigation-frame)
-    -   [<span class="toc-section-number">2.11</span> transformation
+    -   [<span class="toc-section-number">2.12</span> transformation
         among earth-centered-earth-fixed
         representations:](#transformation-among-earth-centered-earth-fixed-representations)
-    -   [<span class="toc-section-number">2.12</span> derivative of
+    -   [<span class="toc-section-number">2.13</span> derivative of
         quaternions:](#derivative-of-quaternions)
-    -   [<span class="toc-section-number">2.13</span> local gravity in
+    -   [<span class="toc-section-number">2.14</span> inverse of a
+        quaternion:](#inverse-of-a-quaternion)
+    -   [<span class="toc-section-number">2.15</span> derivative of
+        euler angles:](#derivative-of-euler-angles)
+    -   [<span class="toc-section-number">2.16</span> local gravity in
         geografic frame:](#local-gravity-in-geografic-frame)
-    -   [<span class="toc-section-number">2.14</span> derivative of
+    -   [<span class="toc-section-number">2.17</span> derivative of
         lat/long/alt:](#derivative-of-latlongalt)
 -   [<span class="toc-section-number">3</span> How to use](#how-to-use)
+-   [<span class="toc-section-number">4</span> How to test
+    it](#how-to-test-it)
 
 # Introduction
 
@@ -100,6 +109,12 @@ This is the standard sintax to create a matrix. The boolean parameter
     C     = q4.Q2C()
     q4    = C.C2Q()
 
+## to convert from/to euler angles to/from transformation-matrix:
+
+    euler = kArrayNav( [10,20,30] ).to_rad()
+    C     = euler.euler2C()
+    euler = C.C2euler().to_deg()
+
 ## to multiply quaternions:
 
     qa2b = ...                  # from 'a' to 'b'
@@ -122,6 +137,19 @@ This is the standard sintax to create a matrix. The boolean parameter
 
     dqdt = qi2b.dqdt( w_ib_b )
 
+## inverse of a quaternion:
+
+    euler = kArrayNav( [10,20,30] ).to_rad()
+    q4    = euler.euler2Q()
+    q_inv = q4.Qinv()
+    e2    = q_inv.Q2euler().to_deg()
+
+## derivative of euler angles:
+
+    euler = kArrayNav( [10,20,30] ).to_rad()
+    w     = kArrayNav( [-1,0,1] ) # [rad/s]
+    dEdt  = euler.dEulerDt(w)
+
 ## local gravity in geografic frame:
 
     local_gravity_n = gravity_n ( latitude, altitude )
@@ -135,3 +163,7 @@ This is the standard sintax to create a matrix. The boolean parameter
     import sys
     sys.path.append(< up to where folder karraynav is >)
     from karraynav import kArrayNav
+
+# How to test it
+
+    kArrayNavTests().do_tests()
