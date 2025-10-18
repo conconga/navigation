@@ -677,23 +677,31 @@ class kArrayNavTests:
         psi   = 20*np.random.randn()
 
         def test6_eqdiff_dEulerDt(y, t, *args):
-            w = args[0]
+            w = args[0](t)
             dEuler = kArrayNav(y).dEulerDt(w).to_list()
             return dEuler
 
         def test6_eqdiff_dRdt(y, t, *args):
-            w = args[0]
+            w = args[0](t)
             R = kArrayNav( np.asarray(y).reshape(3,3) )
             Rp = R * kArrayNav(w).to_skew()
             return Rp.to_list()
 
-        w   = kArrayNav( [10,10,10] ).to_rad().to_list()
+        def tests_angular_speed(t):
+            if t < 1:
+                w   = kArrayNav( [10,10,10] ).to_rad().to_list()
+            elif t < 2:
+                w   = kArrayNav( [-10,10,-10] ).to_rad().to_list()
+            else:
+                w   = kArrayNav( [0,-10,0] ).to_rad().to_list()
+            return w
+
         T   = np.linspace(0, 5, 5*100)
 
-        ret = Int.odeint( test6_eqdiff_dEulerDt, kArrayNav([phi, theta, psi]).to_rad().to_list(), T, args=(w,) )
+        ret = Int.odeint( test6_eqdiff_dEulerDt, kArrayNav([phi, theta, psi]).to_rad().to_list(), T, args=(tests_angular_speed,) )
         ret = [kArrayNav(i).to_deg().to_list() for i in ret]
 
-        Ret = Int.odeint( test6_eqdiff_dRdt, kArrayNav([phi, theta, psi]).to_rad().euler2C().T.to_list(), T, args=(w,) )
+        Ret = Int.odeint( test6_eqdiff_dRdt, kArrayNav([phi, theta, psi]).to_rad().euler2C().T.to_list(), T, args=(tests_angular_speed,) )
         Ret = [(kArrayNav( np.asarray(i).reshape(3,3) ).T.C2euler().to_deg() + 0.1).to_list() for i in Ret]
         # this 0.1 above is just to separate the curves on the next graph
 
