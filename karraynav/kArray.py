@@ -211,7 +211,7 @@ class kArray (kArrayCommon):
             else:
                 ret = self.__class__( self.array + y.array )
 
-        elif isinstance(y, int) or isinstance(y, float):
+        elif isinstance(y, (int, float, np.ndarray)):
             ret = self.__class__( y + self.array )
 
         else:
@@ -241,7 +241,7 @@ class kArray (kArrayCommon):
             else:
                 ret = self.__class__( self.array - y.array )
 
-        elif isinstance(y, int) or isinstance(y, float):
+        elif isinstance(y, (int, float, np.ndarray)):
             ret = self.__class__( self.array - y )
 
         else:
