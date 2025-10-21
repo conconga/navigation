@@ -42,6 +42,9 @@
         geografic frame:](#local-gravity-in-geografic-frame)
     -   [<span class="toc-section-number">2.17</span> derivative of
         lat/long/alt:](#derivative-of-latlongalt)
+    -   [<span class="toc-section-number">2.18</span> to apply a
+        function on the current
+        array:](#to-apply-a-function-on-the-current-array)
 -   [<span class="toc-section-number">3</span> How to use](#how-to-use)
 -   [<span class="toc-section-number">4</span> How to test
     it](#how-to-test-it)
@@ -157,6 +160,11 @@ This is the standard sintax to create a matrix. The boolean parameter
 ## derivative of lat/long/alt:
 
     dLLHdt = dLLH_dt(...)
+
+## to apply a function on the current array:
+
+    a = kArrayNav( [[2,0,0],[0,4,0],[0,0,10]] )
+    b = a.apply(lambda x: np.linalg.inv(x))
 
 # How to use
 

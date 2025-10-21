@@ -51,6 +51,15 @@ class kArrayLib:
             (a[0]*b[1]) - (a[1]*b[0])
         ], hvector=False )
 
+    def apply(self, fn):
+        """
+        Applies a function to the array.
+        : param : fn : function to call with the array as input
+        : returns a new object with the result of 'fn'
+        """
+
+        return self.__class__( fn(self.array) )
+
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 class kNavTransformations(kNavLib):
 
@@ -542,6 +551,7 @@ class kArrayNavTests:
                 euler[0], F_b[0], F_b[1], F_b[2]))
 
         # gravity:
+        print("==== gravity ====")
         import matplotlib.pylab as plt
 
         plt.figure(1).clf()
@@ -556,6 +566,13 @@ class kArrayNavTests:
             ax.plot(np.linspace(0,3000,20), g)
 
         ax.legend(leg)
+
+        # apply(fn)
+        print("==== apply() ====")
+        a = kArrayNav( [[2,0,0],[0,4,0],[0,0,10]] )
+        b = a.apply(lambda x: np.linalg.inv(x))
+        for i in range(3):
+            assert b[i,i] == 1./a[i,i]
 
         #----------------------#
         # coherence tests

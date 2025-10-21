@@ -121,6 +121,12 @@ local_gravity_n = gravity_n ( latitude, altitude )
 dLLHdt = dLLH_dt(...)
 ```
 
+## to apply a function on the current array:
+```
+a = kArrayNav( [[2,0,0],[0,4,0],[0,0,10]] )
+b = a.apply(lambda x: np.linalg.inv(x))
+```
+
 # How to use
 ```
 import sys
