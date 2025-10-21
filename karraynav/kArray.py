@@ -314,6 +314,9 @@ class kArray (kArrayCommon):
         else:
             raise(NameError("not prepared for type '{:s}'".format(str(type(y)))))
 
+    def inv(self):
+        return self.__class__( np.linalg.inv(self.array) )
+
     def to_list(self):
         return self.array.reshape(1,-1).squeeze().tolist()
 
