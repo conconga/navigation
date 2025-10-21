@@ -269,6 +269,10 @@ class kArray (kArrayCommon):
             else:
                 ret = self.__class__( axb )
 
+            # last check: if `ret` is a matrix [1x1], then return a float:
+            if ret.array.shape == (1,1):
+                ret = ret.array.squeeze().tolist()
+
         elif isinstance(y, int) or isinstance(y, float):
             ret = self.__class__( self.array * y )
 
