@@ -24,6 +24,9 @@ class kNavLib:
     earth_e  = sqrt(earth_f*(2.0-earth_f));
     earth_e2 = (earth_e**2.0);
 
+    def __init__(self, **kargs):
+        super().__init__(**kargs)
+
     def Rlambda(self, lat_rad):
         """
         : parameter : lat_rad [rad] latitude
