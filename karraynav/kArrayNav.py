@@ -400,6 +400,35 @@ class kNavTransformations(kNavLib):
             self.dLong_dt(vE, lat_rad, h_m),
             -vD ], hvector=False )
 
+    def w_en_n(self, dLat_dt, dLong_dt, lat_rad):
+        """
+        Calculates the angular velocity of the navigation frame over the earth frame, described at 'n'.
+
+        : parameter : dLat_dt   : [rad/s] derivative of latitude
+        : parameter : dLong_dt  : [rad/s] derivative of longitude
+        : parameter : lat_rad   : [rad]   latitude
+        """
+
+        return self.__class__( [
+            dLong_dt * cos(lat_rad),
+            - dLat_dt,
+            - dLong_dt * sin(lat_rad)
+        ], hvector=False )
+
+    def w_ie_n(self, lat_rad):
+        """
+        Returns the angular velocity of the earth over the inertial frame, described at 'n'.
+
+        : parameter : lat_rad : [rad] latitude
+        """
+
+        wie = self.wie
+        return self.__class__( [
+            wie * cos(lat_rad),
+            0.0,
+            wie * sin(lat_rad)
+        ], hvector=False )
+
 #>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>--<<..>>
 class kArrayNav (kArray, kArrayLib, kNavTransformations):
     def __init__(self, *args, **kargs):
